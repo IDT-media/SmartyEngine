@@ -119,11 +119,7 @@ class SmartyEngine extends Wire implements Module
 
 				$this->addHookBefore('TemplateFile::render', function($event) {
 
-					$filename = $event->object->filename;
-
-					echo $filename;
-
-					if($this->isCached($filename))				
+					if($this->isCached($event->object->filename))				
 						$event->object->halt = true;				
 				});	
 			}
