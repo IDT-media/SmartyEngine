@@ -47,13 +47,13 @@ class SmartyEngine extends Wire implements Module
 		// Caching lifetime of template files in seconds. "0" to disable caching.
 		'cache_lifetime' => 0,
 		// Caching lifetime of template files in seconds. "0" to disable caching.
-		'compile_check' => true,		
+		'compile_check' => false,		
 		// All API variables (page, input, config etc.) are accessible in smarty, e.g. {$page} for $page
 		'api_vars_available' => true,
 		// Extension of smarty template files
 		'ext' => 'tpl',
 		// Base template for fallback
-		'base' => false,		
+		'base' => 'base',		
 		// Render smarty templates automatically
 		'auto_rendering' => true,
 	]; 
@@ -119,7 +119,11 @@ class SmartyEngine extends Wire implements Module
 
 				$this->addHookBefore('TemplateFile::render', function($event) {
 
-					if($this->isCached($event->object->filename))				
+					$filename = $event->object->filename;
+
+					echo $filename;
+
+					if($this->isCached($filename))				
 						$event->object->halt = true;				
 				});	
 			}
@@ -310,8 +314,11 @@ class SmartyEngine extends Wire implements Module
         	$filename = $this->page->template;
 
         $filename = $this->smartyFilename($filename);
-		
-    	return $this->smarty->isCached($filename, $this->getCacheId());
+
+        if(!$res = $this->smarty->isCached($filename, $this->getCacheId()))
+			$res = $this->smarty->isCached($this->smartyFilename($this->getConfig('base')), $this->getCacheId());
+
+    	return $res;
     }
 
     /**
