@@ -46,6 +46,8 @@ class SmartyEngine extends Wire implements Module
 		'plugins_path' => 'templates/plugins/',
 		// Caching lifetime of template files in seconds. "0" to disable caching.
 		'cache_lifetime' => 0,
+		// Caching lifetime of template files in seconds. "0" to disable caching.
+		'compile_check' => true,		
 		// All API variables (page, input, config etc.) are accessible in smarty, e.g. {$page} for $page
 		'api_vars_available' => true,
 		// Extension of smarty template files
@@ -113,14 +115,14 @@ class SmartyEngine extends Wire implements Module
 		// Rendering
 		if($this->page->template != 'admin' && $this->autoRendering()) {
 
-			$this->addHookBefore('TemplateFile::render', function($event) {
+			if(!$this->getConfig('compile_check')) {
 
-				$filename = $this->smartyFilename($event->object->filename);
+				$this->addHookBefore('TemplateFile::render', function($event) {
 
-				if($this->isCached($filename))
-					$event->object->halt = true;
-
-			});	
+					if($this->isCached($event->object->filename))				
+						$event->object->halt = true;				
+				});	
+			}
  
 			$this->addHookAfter('Page::render', function($event) {
 
@@ -359,9 +361,10 @@ class SmartyEngine extends Wire implements Module
         if ($cache_time = $this->getConfig('cache_lifetime')) {
 
             $this->smarty->setCaching(\Smarty::CACHING_LIFETIME_CURRENT);
-            $this->smarty->setCacheLifetime((int)$cache_time);
-            $this->smarty->setCompileCheck(false);
-        }		
+            $this->smarty->setCacheLifetime((int)$cache_time);            
+        }	
+
+        $this->smarty->setCompileCheck( $this->getConfig('compile_check') ?: false );	
 
 		// Debugging
 		if($config->debug)
@@ -379,7 +382,6 @@ class SmartyEngine extends Wire implements Module
         $segments = array(
             $this->wire('page')->template,
             $this->wire('page')->id,
-            $this->wire('user')->id,
             $this->wire('user')->language,
             $this->wire('input')->urlSegmentStr,
             $this->wire('input')->pageNum(),
