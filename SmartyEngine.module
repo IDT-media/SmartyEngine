@@ -23,6 +23,8 @@
  *
  */
 
+class SmartyEngineRenderException extends WireException {}
+
 class SmartyEngine extends Wire implements Module 
 {
 	#----------------------------------------------------------------
@@ -254,9 +256,9 @@ class SmartyEngine extends Wire implements Module
 	 * @param  string
 	 * @return string
 	 */
-    public function render($filename = '')
+    public function render($filename = '', $ignoreBase = false)
     {
-    	return self::isHooked('SmartyEngine::render()') ? $this->__call('render', [$filename]) : $this->___render($filename);
+    	return self::isHooked('SmartyEngine::render()') ? $this->__call('render', [$filename, $ignoreBase]) : $this->___render($filename, $ignoreBase);
     }
 
     /**
@@ -265,7 +267,7 @@ class SmartyEngine extends Wire implements Module
      * @param  string
      * @return string
      */
-    protected function ___render($filename = '')
+    protected function ___render($filename = '', $ignoreBase = false)
     {
 		// fuel variable auto assign
 		if ($this->getConfig('api_vars_available')) {
@@ -275,7 +277,7 @@ class SmartyEngine extends Wire implements Module
 					case 'wire':
 					case 'classLoader':
 					case $this->getConfig('fuel_var'):
-						continue 2;					
+						continue 2;
 				}
 
 				$this->smarty->assign($name, $object);
@@ -292,8 +294,10 @@ class SmartyEngine extends Wire implements Module
 				
         } catch (\SmartyException $e) {
 		
-			if($base = $this->getConfig('base'))
+			if(!$ignoreBase && $base = $this->getConfig('base'))
             	return $this->smarty->fetch($this->getPath('templates_path') . $this->smartyFilename($base), $this->getCacheId());
+            else
+            	throw new SmartyEngineRenderException($e->getMessage(), $e->getCode());
         }
     }
 
