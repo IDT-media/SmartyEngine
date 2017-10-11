@@ -31,8 +31,8 @@ class SmartyEngine extends Wire implements Module
 	# Constants
 	#----------------------------------------------------------------	
 
-    const COMPILE_DIR = 'SmartyEngine/template_c/';
-    const CACHE_DIR = 'SmartyEngine/cache/';
+	const COMPILE_DIR = 'SmartyEngine/template_c/';
+	const CACHE_DIR = 'SmartyEngine/cache/';
 
 	#----------------------------------------------------------------
 	# Attributes
@@ -290,12 +290,12 @@ class SmartyEngine extends Wire implements Module
         	if(empty($filename))
         		$filename = $this->page->template;
 		
-			return $this->smarty->fetch($this->getPath('templates_path') . $this->smartyFilename($filename), $this->getCacheId());
+			return $this->smarty->fetch($this->smartyFilename($filename), $this->getCacheId());
 				
         } catch (\SmartyException $e) {
 		
 			if(!$ignoreBase && $base = $this->getConfig('base'))
-            	return $this->smarty->fetch($this->getPath('templates_path') . $this->smartyFilename($base), $this->getCacheId());
+            	return $this->smarty->fetch($this->smartyFilename($base), $this->getCacheId());
             else
             	throw new SmartyEngineRenderException($e->getMessage(), $e->getCode());
         }
@@ -358,11 +358,23 @@ class SmartyEngine extends Wire implements Module
 
 		$this->smarty = new \Smarty();
 
-		// Core config
-        $this->smarty->setTemplateDir($this->getPath('templates_path'));
-        $this->smarty->addPluginsDir($this->getPath('plugins_path'));
+		// Core
         $this->smarty->setCompileDir($config->paths->cache . self::COMPILE_DIR);
         $this->smarty->setCacheDir($config->paths->cache . self::CACHE_DIR);
+
+		// Plugins
+        $this->smarty->addPluginsDir($this->getPath('plugins_path'));
+
+ 		// Templates
+        $dir  = new \RecursiveDirectoryIterator($this->getPath('templates_path'), \RecursiveDirectoryIterator::SKIP_DOTS);
+		$files = new \RecursiveIteratorIterator($dir, \RecursiveIteratorIterator::SELF_FIRST);
+        
+        $this->smarty->addTemplateDir($this->getPath('templates_path'));
+        foreach ($files as $item) {
+        	
+        	if($item->isDir())        
+        		$this->smarty->addTemplateDir($item->getPathname());
+        }
 
 		// Caching
         if ($cache_time = $this->getConfig('cache_lifetime')) {
