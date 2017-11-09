@@ -49,7 +49,7 @@ class SmartyEngine extends Wire implements Module
 		// Caching lifetime of template files in seconds. "0" to disable caching.
 		'cache_lifetime' => 0,
 		// Caching lifetime of template files in seconds. "0" to disable caching.
-		'compile_check' => false,		
+		'compile_check' => true,		
 		// All API variables (page, input, config etc.) are accessible in smarty, e.g. {$page} for $page
 		'api_vars_available' => true,
 		// Extension of smarty template files
@@ -114,26 +114,26 @@ class SmartyEngine extends Wire implements Module
 	 */
     public function ready()
     {
-		// Rendering
-		if($this->page->template != 'admin' && $this->autoRendering()) {
+    	// Rendering
+		$this->addHookAfter('Page::render', function($event) {
+		
+			if($this->page->template != 'admin' && $this->autoRendering()) {
 
-			if(!$this->getConfig('compile_check')) {
+				if(!$this->getConfig('compile_check')) {
 
-				$this->addHookBefore('TemplateFile::render', function($event) {
+					$this->addHookBefore('TemplateFile::render', function($event) {
 
-					if($this->isCached($event->object->filename))				
-						$event->object->halt = true;				
-				});	
-			}
- 
-			$this->addHookAfter('Page::render', function($event) {
+						if($this->isCached($event->object->filename))				
+							$event->object->halt = true;				
+					});	
+				}
 
 				$page = $this->wire('page', $event->object);
 
 				if(!$page->template->smartyRendering)
 					$event->return .= $this->render($page->template);
-			});	
-		}
+			}
+		});	
 
 		// ProcessTemplate additions
 		if($this->page->process == 'ProcessTemplate') {
