@@ -130,7 +130,7 @@ class SmartyEngine extends Wire implements Module
 
 				$page = $this->wire('page', $event->object);
 
-				if(!$page->template->smartyRendering)
+				if(!$page->template->smartyRendering && $page->template->name != 'form-builder')
 					$event->return .= $this->render($page->template);
 			}
 		});	
